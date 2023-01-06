@@ -1,0 +1,33 @@
+﻿Variable;Definition;Type ;Scale
+f.eid;unique identifier; numeric ;continuous
+inc.dem2;incident all-cause dementia; numeric ;0/1
+duryears;survival time; numeric ;continuous
+age;age; numeric ;continuous
+sex;sex; factor ;0/1
+edu_new;education; factor ;high/medium/low/prefer not to answer, none of the above
+marital_status;living situation; factor ;partner, wife, husband/other
+employment_status;retirement status; factor ;retired/employed/other
+n_ppl_in_hh;number of people living in the household; numeric ;continuous
+cwlife2;healthy lifestyle; character ;favorable/intermediate/unfavorable/prefer not to answer
+depress2;depressive symptoms in the last two weeks; factor ;never/other
+pc1 - 20;principal components of ancestry; numeric ;continuous
+cnt1;number of SNPs included to compute the polygenic risk score; numeric;continuous
+degree3;degree 3 relatedness; factor ;0/1
+Sprs;polygenic risk score; numeric ;continuous
+score_accommodation_asset;household ownership; factor ;0/1
+score_vehicles;car ownership; factor ;0/1
+score_accommodation_type;household type/living in a house; factor ;0/1
+wwealth;individual socioeconomic deprivation; numeric ;continuous
+cwwealth_inc;individual socioeconomic deprivation;  factor ;low deprivation/intermediate deprivation/high deprivation
+wealth_Sprs;combined individual socioeconomic deprivation and genetic risk; factor;Q1 (low risk) Q5 (high deprivation)/Q1 (low risk) Q2-4 (intermediate deprivation)/Q1 (low risk) Q1 (low deprivation)/Q2-4 (intermediate risk) Q5 (high deprivation)/Q2-4 (intermediate risk) Q2-4 (intermediate deprivation)/Q2-4 (intermediate risk) Q1 (low deprivation)/Q5 (high risk) Q1 (high deprivation)/Q5 (high risk) Q2-4 (intermediate deprivation)/Q5 (high risk) Q1 (low deprivation))
+tdi;Townsend Deprivation Index; numeric ;continuous
+tdi_bin;area socioeconomic deprivation; factor ;Q1-4/Q5
+tdi_Sprs;combined area socioeconomic deprivation and genetic risk; factor;Q1 (low risk) Q1-4 (low-to-moderate deprivation)/Q1 (low risk) Q5 (high deprivation)/Q2-4 (intermediate risk) Q1-4 (low-to-moderate deprivation)/Q2-4 (intermediate risk) Q5 (high deprivation)/Q5 (high risk) Q1-4 (low-to-moderate deprivation)/Q5 (high risk) Q5 (high deprivation))
+f.54.2.0;visit location at T2; numeric;11025/11026/11027/11028
+f.53.0.0 / f.53.2.0;visit date at T0 (baseline) and T2; date;NA
+f.25781.2.0;WMH burden; numeric ;continuous
+f.25020.2.0;volume of Hippocampus (r); numeric ;continuous
+f.25019.2.0;volume of Hippocampus (l); numeric ;continuous
+f.25006.2.0;volume of Grey Matter; numeric ;continuous
+f.25008.2.0;volume of White Matter; numeric ;continuous
+f.25010.2.0;volume of Whole Brain; numeric ;continuous
