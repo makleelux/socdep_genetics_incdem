@@ -2,9 +2,8 @@
 title: "Socioeconomic Deprivation, Genetic Risk and Incident Dementia"
 subtitle: Data Documentation - Matthias Klee 2021-11-13
 output:
-  html_document:
-    toc: yes
-    df_print: paged
+  pdf_document:
+    toc: true
 ---
 
 # Intro
@@ -15,6 +14,8 @@ Folders contained in the project are the following:
 * ./data should contain prepared data files after fetching, imputing and preprocessing (e.g. genetic risk score computation)
 * ./plots will contain main figures after running the markdown code
 * ./code contains scripts including function definitions
+
+\newpage
 
 ## Instructions
 You have two options to use this data documentation: You can either,
@@ -39,7 +40,7 @@ You can then continue to open the markdown file ./20210104_Deprivation_x_Genetic
 * survey
 * cobalt
 
-```{r}
+```{r echo = FALSE, message = FALSE}
 # setup
 knitr::opts_chunk$set(echo=FALSE)
 knitr::opts_chunk$set(cache=TRUE)
@@ -53,12 +54,25 @@ knitr::opts_chunk$set(warning=FALSE)
 source("./code/20220322_func.R")
 ```
 
+\newpage
+
 You can then either load your data following the naming conventions that are illustrated in the code chunk below or adapt the markdown file to match your naming with regard to data files and column names.
+
 
 ```{r}
 variables = read.csv2("./data/variables.csv", col.names = c("Variable", "Definition", "Type", "Scale"))
-kable(variables)
+variables %>% kable(format = "latex",
+                    align = "l",
+                    booktabs = TRUE,
+                    longtable = TRUE,
+                    linesep = "") %>% 
+  kableExtra::kable_styling(latex_options = c("HOLD_position", "repeat_header")) %>% 
+  kableExtra::row_spec(0, bold = T) %>% 
+  kableExtra::column_spec(c(1, 2, 4), width = "4.2cm") %>% 
+  kableExtra::column_spec(3, width = "2.4cm")
 ```
+
+
 
 ```{r}
 # load files (5 imputed data files, 1 complete case data file)
@@ -74,6 +88,7 @@ load("./data/20220629final_vars_aug_imp5.RData")
 data_ls = list(final_vars_aug.imp1, final_vars_aug.imp2, final_vars_aug.imp3, final_vars_aug.imp4, final_vars_aug.imp5)
 ```
 
+\newpage
 
 # Analyses
 
@@ -90,9 +105,14 @@ rbind_data = data_ls[1] %>% as.data.frame() %>%
     rbind(data_ls[4] %>% as.data.frame()) %>% 
     rbind(data_ls[5] %>% as.data.frame())
 
-print_table1(rbind_data)
+print_table1(rbind_data) %>% 
+  kable(format = "latex", align = c("l"), booktabs = TRUE) %>% 
+  kableExtra::row_spec(c(0, 1, 2, 5, 10, 11, 15, 16, 20, 23), bold = T) %>% 
+  kableExtra::kable_styling(position = "center", latex_options = c("HOLD_position")) %>% 
+  kableExtra::column_spec(1:3, width = "5cm")
 ```
 
+\newpage
 
 ## Table 2. Risk of Incident Dementia by Area-Level Socioeconomic Deprivation Category
 
@@ -102,6 +122,7 @@ print_table1(rbind_data)
 
 formula_basic_c_string = "degree3 + pc1 + pc2 + pc3 + pc4 + pc5 + pc6 + pc7 + pc8 + pc9 + pc10 + pc11 + pc12 + pc13 + pc14 + pc15 + pc16 + pc17 + pc18 + pc19 + pc20 + sex + age + edu_new + marital_status"
 ```
+
 
 ```{r}
 
@@ -126,9 +147,14 @@ model_row_area() %>%
   rbind(print_hr_results_area(res_area2_pooled, data_ls[1] %>% as.data.frame())) %>% 
   rbind(model_row_area()) %>% 
   rbind(print_hr_results_area(res_area3_pooled, data_ls[1] %>% as.data.frame())) %>%
-  rbind(model_row_area()) %>%
-  kable(align = "l")
+  kable(format = "latex", align = "l", booktabs = TRUE) %>% 
+  kableExtra::row_spec(c(0, 1, 4, 7), bold = T) %>% 
+  kableExtra::kable_styling(position = "center", latex_options = c("HOLD_position")) %>% 
+  kableExtra::column_spec(c(1, 3, 4), width = "3.5cm") %>% 
+  kableExtra::column_spec(c(2, 5), width = "2.25cm")
 ```
+
+\newpage
 
 ## Table 3. Risk of Incident Dementia by Individual-Level Socioeconomic Deprivation Category
 
@@ -170,8 +196,14 @@ model_row_individual() %>%
   rbind(model_row_individual()) %>% 
   rbind(print_hr_results_individual(res_individual3_pooled, data_ls[1] %>% as.data.frame(), 
                                     pvalue_for_trend = get_pvalue(res_individual_cont_3_pooled))) %>%
-  kable(align = "l")
+  kable(format = "latex", align = "l", booktabs = TRUE)  %>% 
+  kableExtra::row_spec(c(0, 1, 5, 9), bold = T) %>% 
+  kableExtra::kable_styling(position = "center", latex_options = c("HOLD_position")) %>% 
+  kableExtra::column_spec(c(1, 3, 4), width = "3.25cm") %>% 
+  kableExtra::column_spec(c(2, 5, 6), width = "1.75cm")
 ```
+
+\newpage
 
 ## Figure 1. Risk of Incident Dementia for A Area-Level and B Individual-Level Socioeconomic Deprivation with Genetic Risk
 
@@ -190,12 +222,16 @@ res_individual_Sprs_pooled = coxmodel_then_pool(paste(formula_basic_c_string, "c
 
 ```{r}
 res_table_area = print_figure1_res_table("tdi_Sprs", res_area_Sprs_pooled) 
-res_table_area %>% kable(align = "l")
+res_table_area %>% 
+  kable(format = "latex", align = "l", booktabs = TRUE) %>% 
+  kableExtra::row_spec(0, bold = T) %>% 
+  kableExtra::kable_styling(position = "center", latex_options = c("HOLD_position")) %>% 
+  kableExtra::column_spec(1:7, width = "2.1cm")
 ```
 
 ### Plot for A
 
-```{r fig.align="center", fig.width=12, fig.height=9}
+```{r fig.align="center", fig.width=9, fig.height=6}
 # n cells 10 * .15 cell hight in document * 2 for size + .15 for scales
 #png(filename = "./plots/figure1_area.png", width = 5, res = 300, height = 3.15, units = "in")
 print_figure1_res_table("tdi_Sprs", res_area_Sprs_pooled) %>% 
@@ -205,7 +241,7 @@ print_figure1_res_table("tdi_Sprs", res_area_Sprs_pooled) %>%
   #add_row(`Deprivation and Genetic Risk` = "empty6", .after = 6) %>% 
   
   ## rename levels
-  mutate(`Deprivation and Genetic Risk` = factor(`Deprivation and Genetic Risk`, levels = c("Q5 (high risk) Q5 (high deprivation)", "Q5 (high risk) Q1-4 (low-to-moderate deprivation)", "empty6", "Q2-4 (intermediate risk) Q5 (high deprivation)", "Q2-4 (intermediate risk) Q1-4 (low-to-moderate deprivation)", "empty3", "Q1 (low risk) Q5 (high deprivation)", "Q1 (low risk) Q1-4 (low-to-moderate deprivation)", "empty0")),
+  mutate(`Deprivation and Genetic Risk` = factor(`Deprivation and Genetic Risk`, levels = c("(high risk) (high deprivation)", "(high risk) (low-to-moderate deprivation)", "empty6", "(intermediate risk) (high deprivation)", "(intermediate risk) (low-to-moderate deprivation)", "empty3", "(low risk) (high deprivation)", "(low risk) (low-to-moderate deprivation)", "empty0")),
          `HR (95% CI)` = ifelse(`HR (95% CI)` == "1 [Reference]", 1, as.numeric(`HR (95% CI)`)),
          conf.low = ifelse(`Lower CI` == "", NA, as.numeric(`Lower CI`)),
          conf.high = ifelse(`Upper CI` == "", NA, as.numeric(`Upper CI`))) %>%
@@ -227,16 +263,22 @@ print_figure1_res_table("tdi_Sprs", res_area_Sprs_pooled) %>%
 #dev.off()
 ```
 
+\newpage
+
 ### Results Table for B
 
 ```{r}
 res_table_individual = print_figure1_res_table("wealth_Sprs", res_individual_Sprs_pooled) 
-res_table_individual %>% kable(align = "l")
+res_table_individual %>% 
+  kable(format = "latex", align = "l", booktabs = TRUE) %>% 
+  kableExtra::row_spec(0, bold = T) %>% 
+  kableExtra::kable_styling(position = "center", latex_options = c("HOLD_position")) %>% 
+  kableExtra::column_spec(1:7, width = "2.1cm")
 ```
 
 ### Plot for B
 
-```{r fig.align="center", fig.width=12, fig.height=12}
+```{r fig.align="center", fig.width=9, fig.height=9}
 # --------- plot for individual deprivation --------- #
 
 # n cells 12 * .15 cell hight in document * 2 for size + .15 for scales
@@ -248,7 +290,7 @@ print_figure1_res_table("wealth_Sprs", res_individual_Sprs_pooled) %>%
   #add_row(`Genetic risk and individual deprivation` = "empty8", .after = 8) %>% 
   
   ## rename levels
-  mutate(`Deprivation and Genetic Risk` = factor(`Deprivation and Genetic Risk`, levels = c("Q5 (high risk) Q5 (high deprivation)", "Q5 (high risk) Q2-4 (intermediate deprivation)", "Q5 (high risk) Q1 (low deprivation)", "empty8", "Q2-4 (intermediate risk) Q5 (high deprivation)", "Q2-4 (intermediate risk) Q2-4 (intermediate deprivation)", "Q2-4 (intermediate risk) Q1 (low deprivation)", "empty4", "Q1 (low risk) Q5 (high deprivation)", "Q1 (low risk) Q2-4 (intermediate deprivation)", "Q1 (low risk) Q1 (low deprivation)", "empty0")),
+  mutate(`Deprivation and Genetic Risk` = factor(`Deprivation and Genetic Risk`, levels = c("(high risk) (high deprivation)", "(high risk) (intermediate deprivation)", "(high risk) (low deprivation)", "empty8", "(intermediate risk) (high deprivation)", "(intermediate risk) (intermediate deprivation)", "(intermediate risk) (low deprivation)", "empty4", "(low risk) (high deprivation)", "(low risk) (intermediate deprivation)", "(low risk) (low deprivation)", "empty0")),
          `HR (95% CI)` = ifelse(`HR (95% CI)` == "1 [Reference]", 1, as.numeric(`HR (95% CI)`)),
          conf.low = ifelse(`Lower CI` == "", NA, as.numeric(`Lower CI`)),
          conf.high = ifelse(`Upper CI` == "", NA, as.numeric(`Upper CI`))) %>%
@@ -270,6 +312,7 @@ print_figure1_res_table("wealth_Sprs", res_individual_Sprs_pooled) %>%
 #dev.off()
 ```
 
+\newpage
 
 # Appendix
 
@@ -278,7 +321,8 @@ print_figure1_res_table("wealth_Sprs", res_individual_Sprs_pooled) %>%
 ```{r}
 # --------- derive weights underlying individual-level socioeconomic deprivation --------- #
 
-cat("Non-disclosed socioeconomic information included in 'other' or as a separate category (for income only)")
+cat("Non-disclosed socioeconomic information included in 
+    'other' or as a separate category (for income only)")
 
 ## cox proportional-hazards regression model
 res_individual_weights = coxph(
@@ -289,9 +333,14 @@ res_individual_weights = coxph(
   data = final_vars_aug.imp1) %>% 
   tidy(conf.int = T)
 
-print_etable1(res_individual_weights, final_vars_aug.imp1)
+print_etable1(res_individual_weights, final_vars_aug.imp1) %>% 
+  kable(format = "latex", align = "l", booktabs = TRUE, digits = 3) %>% 
+  kableExtra::row_spec(c(0, 1, 6, 9, 12), bold = T) %>% 
+  kableExtra::kable_styling(latex_options = c("HOLD_position")) %>% 
+  kableExtra::column_spec(1:4, width = "3.75cm")
+```
 
-
+```{r}
 # --------------- sensitivity check without non-disclosed income or assets --------------- #
 
 cat("Non-disclosed socioeconomic information excluded")
@@ -308,9 +357,15 @@ res_individual_weights_withoutND = coxph(
   data = final_vars_aug_withoutND) %>%
   tidy(conf.int = T)
 
-print_etable1(res_individual_weights_withoutND, final_vars_aug_withoutND)
-  
+print_etable1(res_individual_weights_withoutND, final_vars_aug_withoutND) %>% 
+  kable(format = "latex", align = "l", booktabs = TRUE, digits = 3) %>% 
+  kableExtra::row_spec(c(0, 1, 5, 8, 11), bold = T) %>% 
+  kableExtra::kable_styling(latex_options = c("HOLD_position")) %>% 
+  kableExtra::column_spec(1:4, width = "3.75cm")
+
 ```
+
+\newpage
 
 ## eTable 2. Total Participants and Incident Dementia Cases in Area-Level Socioeconomic Deprivation Groups
 
@@ -334,8 +389,14 @@ final_vars_aug.imp1 %>%
   group_by(`Area-Level Socioeconomic Deprivation`) %>% 
   summarise(`No. of Dementia Cases` = sum(inc.dem2 == 1), `Total No.` = n()) %>% 
   cbind(risk_area, inc_area) %>% 
-  kable(align = "l", digits = 2)
+  kable(format = "latex", align = "l", booktabs = TRUE, digits = 2) %>% 
+  kableExtra::row_spec(0, bold = T) %>% 
+  kableExtra::kable_styling(position = "center", latex_options = c("HOLD_position")) %>% 
+  kableExtra::column_spec(1, width = "3cm") %>% 
+  kableExtra::column_spec(2:9, width = "1.4cm")
 ```
+
+\newpage
 
 ## eTable 3. Total Participants and Incident Dementia Cases in Individual-Level Socioeconomic Deprivation Groups
 
@@ -359,8 +420,14 @@ final_vars_aug.imp1 %>%
   group_by(`Individual-Level Socioeconomic Deprivation`) %>% 
   summarise(`No. of Dementia Cases` = sum(inc.dem2 == 1), `Total No.` = n()) %>% 
   cbind(risk_individual, inc_individual) %>% 
-  kable(align = "l", digits = 2)
+  kable(format = "latex", align = "l", booktabs = TRUE, digits = 2) %>% 
+  kableExtra::row_spec(0, bold = T) %>% 
+  kableExtra::kable_styling(position = "center", latex_options = c("HOLD_position")) %>% 
+  kableExtra::column_spec(1, width = "3cm") %>% 
+  kableExtra::column_spec(2:9, width = "1.4cm")
 ```
+
+\newpage
 
 ## eTable 4. Total Participants and Incident Dementia Cases According to Area-Level Socioeconomic Deprivation within Each Genetic Risk Category
 
@@ -379,13 +446,22 @@ risk_area_sprs = risk_est(c("tdi_bin", "Sprs_tert"))
 # --------- print table --------- #
 
 final_vars_aug.imp1 %>%
-  mutate(`Area-Level Socioeconomic Deprivation` = tdi_bin, `Genetic Risk` = Sprs_tert) %>% 
+  mutate(`Area-Level Socioeconomic Deprivation` = tdi_bin, 
+         `Genetic Risk` = factor(case_when(Sprs_tert == "Q1" ~ "low",
+                                           Sprs_tert == "Q2-4" ~ "intermediate",
+                                           Sprs_tert == "Q5" ~ "high"))) %>% 
   select(inc.dem2, duryears, `Area-Level Socioeconomic Deprivation`, `Genetic Risk`) %>% 
   group_by(`Area-Level Socioeconomic Deprivation`, `Genetic Risk`) %>% 
   summarise(`No. of Dementia Cases` = sum(inc.dem2 == 1), `Total No.` = n()) %>% 
   cbind(risk_area_sprs, inc_area_sprs) %>% 
-  kable(align = "l", digits = 2)
+  kable(format = "latex", align = "l", booktabs = TRUE, digits = 2) %>% 
+  kableExtra::row_spec(0, bold = T) %>% 
+  kableExtra::kable_styling(position = "center", latex_options = c("HOLD_position")) %>% 
+  kableExtra::column_spec(c(1, 2), width = "1.8cm") %>% 
+  kableExtra::column_spec(c(3:11), width = "1.26cm")
 ```
+
+\newpage
 
 ## eTable 5. Total Participants and Incident Dementia Cases According to Individual-Level Socioeconomic Deprivation within Each Genetic Risk Category
 
@@ -403,51 +479,184 @@ risk_individual_sprs = risk_est(c("cwwealth_inc", "Sprs_tert"))
 # --------- print table --------- #
 
 final_vars_aug.imp1 %>%
-  mutate(`Individual-Level Socioeconomic Deprivation` = cwwealth_inc, `Genetic Risk` = Sprs_tert) %>% 
+  mutate(`Individual-Level Socioeconomic Deprivation` = cwwealth_inc, 
+         `Genetic Risk` = factor(case_when(Sprs_tert == "Q1" ~ "low",
+                                           Sprs_tert == "Q2-4" ~ "intermediate",
+                                           Sprs_tert == "Q5" ~ "high"))) %>% 
   select(inc.dem2, duryears, `Individual-Level Socioeconomic Deprivation`, `Genetic Risk`) %>% 
   group_by(`Individual-Level Socioeconomic Deprivation`, `Genetic Risk`) %>% 
   summarise(`No. of Dementia Cases` = sum(inc.dem2 == 1), `Total No.` = n()) %>% 
   cbind(risk_individual_sprs, inc_individual_sprs) %>% 
-  kable(align = "l", digits = 2)
+  kable(format = "latex", align = "l", booktabs = TRUE, digits = 2) %>% 
+  kableExtra::kable_styling(position = "center", latex_options = c("HOLD_position")) %>% 
+  kableExtra::row_spec(0, bold = T) %>% 
+  kableExtra::column_spec(c(1, 2), width = "1.8cm") %>% 
+  kableExtra::column_spec(c(3:11), width = "1.26cm")
 ```
+
+\newpage
 
 ## eTables 6-11. Coefficients for Multivariable Linear Regressions of Grey Matter Volume in Imputed and Complete-Case Data with Full and Reduced Deconfounding Set
 
 ### Imputed Data
 
+#### Log-transformed WMH burden
 
 ```{r}
-cat("Log-transformed WMH burden")
-print_2step_reg_results(variable = "f.25781.2.0", data_ls = data_ls)
-cat("Right hippocampus volume")
-print_2step_reg_results(variable = "f.25020.2.0", data_ls = data_ls)
-cat("Left hippocampus volume")
-print_2step_reg_results(variable = "f.25019.2.0", data_ls = data_ls)
-cat("Whole brain volume")
-print_2step_reg_results(variable = "f.25010.2.0", data_ls = data_ls)
-cat("White matter volume")
-print_2step_reg_results(variable = "f.25008.2.0", data_ls = data_ls)
-cat("Grey matter volume")
-print_2step_reg_results(variable = "f.25006.2.0", data_ls = data_ls)
+print_2step_reg_results(variable = "f.25781.2.0", data_ls = data_ls) %>% 
+  kable(digits = 4, format = "latex", align = "l", booktabs = TRUE) %>% 
+  kableExtra::row_spec(0, bold = T) %>% 
+  kableExtra::kable_styling(latex_options = c("HOLD_position"), position = "center") %>% 
+  kableExtra::column_spec(1:3, width = "4cm") %>% 
+  kableExtra::column_spec(4:5, width = "1.5cm")
 ```
+
+\newpage
+
+#### Right hippocampus volume
+
+```{r}
+print_2step_reg_results(variable = "f.25020.2.0", data_ls = data_ls) %>% 
+  kable(digits = 4, format = "latex", align = "l", booktabs = TRUE) %>% 
+  kableExtra::row_spec(0, bold = T) %>% 
+  kableExtra::kable_styling(latex_options = c("HOLD_position"), position = "center") %>% 
+  kableExtra::column_spec(1:3, width = "4cm") %>% 
+  kableExtra::column_spec(4:5, width = "1.5cm")
+```
+
+\newpage
+
+#### Left hippocampus volume
+
+```{r}
+print_2step_reg_results(variable = "f.25019.2.0", data_ls = data_ls) %>% 
+  kable(digits = 4, format = "latex", align = "l", booktabs = TRUE) %>% 
+  kableExtra::row_spec(0, bold = T) %>% 
+  kableExtra::kable_styling(latex_options = c("HOLD_position"), position = "center") %>% 
+  kableExtra::column_spec(1:3, width = "4cm") %>% 
+  kableExtra::column_spec(4:5, width = "1.5cm")
+```
+
+\newpage
+
+#### Whole brain volume
+
+```{r}
+print_2step_reg_results(variable = "f.25010.2.0", data_ls = data_ls) %>% 
+  kable(digits = 4, format = "latex", align = "l", booktabs = TRUE) %>% 
+  kableExtra::row_spec(0, bold = T) %>% 
+  kableExtra::kable_styling(latex_options = c("HOLD_position"), position = "center") %>% 
+  kableExtra::column_spec(1:3, width = "4cm") %>% 
+  kableExtra::column_spec(4:5, width = "1.5cm")
+```
+
+\newpage
+
+#### White matter volume
+
+```{r}
+print_2step_reg_results(variable = "f.25008.2.0", data_ls = data_ls) %>% 
+  kable(digits = 4, format = "latex", align = "l", booktabs = TRUE) %>% 
+  kableExtra::row_spec(0, bold = T) %>% 
+  kableExtra::kable_styling(latex_options = c("HOLD_position"), position = "center") %>% 
+  kableExtra::column_spec(1:3, width = "4cm") %>% 
+  kableExtra::column_spec(4:5, width = "1.5cm")
+```
+
+\newpage
+
+#### Grey matter volume
+
+```{r}
+print_2step_reg_results(variable = "f.25006.2.0", data_ls = data_ls) %>% 
+  kable(digits = 4, format = "latex", align = "l", booktabs = TRUE) %>% 
+  kableExtra::row_spec(0, bold = T) %>% 
+  kableExtra::kable_styling(latex_options = c("HOLD_position"), position = "center") %>% 
+  kableExtra::column_spec(1:3, width = "4cm") %>% 
+  kableExtra::column_spec(4:5, width = "1.5cm")
+```
+
+\newpage
 
 ### Complete Cases
 
+#### Log-transformed WMH burden
+
 ```{r}
-cat("Log-transformed WMH burden")
-print_2step_reg_results(variable = "f.25781.2.0", data_ls = list(final_vars_aug))
-cat("Right hippocampus volume")
-print_2step_reg_results(variable = "f.25020.2.0", data_ls = list(final_vars_aug))
-cat("Left hippocampus volume")
-print_2step_reg_results(variable = "f.25019.2.0", data_ls = list(final_vars_aug))
-cat("Whole brain volume")
-print_2step_reg_results(variable = "f.25010.2.0", data_ls = list(final_vars_aug))
-cat("White matter volume")
-print_2step_reg_results(variable = "f.25008.2.0", data_ls = list(final_vars_aug))
-cat("Grey matter volume")
-print_2step_reg_results(variable = "f.25006.2.0", data_ls = list(final_vars_aug))
+print_2step_reg_results(variable = "f.25781.2.0", data_ls = list(final_vars_aug)) %>% 
+  kable(digits = 4, format = "latex", align = "l", booktabs = TRUE) %>% 
+  kableExtra::row_spec(0, bold = T) %>% 
+  kableExtra::kable_styling(latex_options = c("HOLD_position"), position = "center") %>% 
+  kableExtra::column_spec(1:3, width = "4cm") %>% 
+  kableExtra::column_spec(4:5, width = "1.5cm")
 ```
 
+\newpage
+
+#### Right hippocampus volume
+
+```{r}
+print_2step_reg_results(variable = "f.25020.2.0", data_ls = list(final_vars_aug)) %>% 
+  kable(digits = 4, format = "latex", align = "l", booktabs = TRUE) %>% 
+  kableExtra::row_spec(0, bold = T) %>% 
+  kableExtra::kable_styling(latex_options = c("HOLD_position"), position = "center") %>% 
+  kableExtra::column_spec(1:3, width = "4cm") %>% 
+  kableExtra::column_spec(4:5, width = "1.5cm")
+```
+
+\newpage
+
+#### Left hippocampus volume
+
+```{r}
+print_2step_reg_results(variable = "f.25019.2.0", data_ls = list(final_vars_aug)) %>% 
+  kable(digits = 4, format = "latex", align = "l", booktabs = TRUE) %>% 
+  kableExtra::row_spec(0, bold = T) %>% 
+  kableExtra::kable_styling(latex_options = c("HOLD_position"), position = "center") %>% 
+  kableExtra::column_spec(1:3, width = "4cm") %>% 
+  kableExtra::column_spec(4:5, width = "1.5cm")
+```
+
+\newpage
+
+#### Whole brain volume
+
+```{r}
+print_2step_reg_results(variable = "f.25010.2.0", data_ls = list(final_vars_aug)) %>% 
+  kable(digits = 4, format = "latex", align = "l", booktabs = TRUE) %>% 
+  kableExtra::row_spec(0, bold = T) %>% 
+  kableExtra::kable_styling(latex_options = c("HOLD_position"), position = "center") %>% 
+  kableExtra::column_spec(1:3, width = "4cm") %>% 
+  kableExtra::column_spec(4:5, width = "1.5cm")
+```
+
+\newpage
+
+#### White matter volume
+
+```{r}
+print_2step_reg_results(variable = "f.25008.2.0", data_ls = list(final_vars_aug)) %>% 
+  kable(digits = 4, format = "latex", align = "l", booktabs = TRUE) %>% 
+  kableExtra::row_spec(0, bold = T) %>% 
+  kableExtra::kable_styling(latex_options = c("HOLD_position"), position = "center") %>% 
+  kableExtra::column_spec(1:3, width = "4cm") %>% 
+  kableExtra::column_spec(4:5, width = "1.5cm")
+```
+
+\newpage
+
+#### Grey matter volume
+
+```{r}
+print_2step_reg_results(variable = "f.25006.2.0", data_ls = list(final_vars_aug)) %>% 
+  kable(digits = 4, format = "latex", align = "l", booktabs = TRUE) %>% 
+  kableExtra::row_spec(0, bold = T) %>% 
+  kableExtra::kable_styling(latex_options = c("HOLD_position"), position = "center") %>% 
+  kableExtra::column_spec(1:3, width = "4cm") %>% 
+  kableExtra::column_spec(4:5, width = "1.5cm")
+```
+
+\newpage
 
 ## eTable 12. Risk of Incident Dementia According to Combined Area-Level Socioeconomic Deprivation and Genetic Risk in Complete-Case Data
 
@@ -463,8 +672,15 @@ res_area_complete = coxph(Surv(duryears, inc.dem2) ~
                           data = final_vars_aug)
 
 ## print results
-print_etable1213(res_area_complete, "tdi_Sprs")
+print_etable1213(res_area_complete, "tdi_Sprs") %>% 
+  kable(format = "latex", align = "l", booktabs = TRUE)  %>% 
+  kableExtra::row_spec(0, bold = T) %>% 
+  kableExtra::kable_styling(position = "center", latex_options = c("HOLD_position")) %>% 
+  kableExtra::column_spec(1, width = "5cm") %>% 
+  kableExtra::column_spec(2:5, width = "2.5cm")
 ```
+
+\newpage
 
 ## eTable 13. Risk of Incident Dementia According to Combined Individual-Level Socioeconomic Deprivation and Genetic Risk in Complete-Case Data
 
@@ -481,8 +697,15 @@ res_individual_complete = coxph(Surv(duryears, inc.dem2) ~
                                 data = final_vars_aug)
   
 ## print results
-print_etable1213(res_individual_complete, "wealth_Sprs")
+print_etable1213(res_individual_complete, "wealth_Sprs") %>% 
+  kable(format = "latex", align = "l", booktabs = TRUE)  %>% 
+  kableExtra::row_spec(0, bold = T) %>% 
+  kableExtra::kable_styling(position = "center", latex_options = c("HOLD_position")) %>% 
+  kableExtra::column_spec(1, width = "5cm") %>% 
+  kableExtra::column_spec(2:5, width = "2.5cm")
 ```
+
+\newpage
 
 ## eTable 14. Risk of Dementia According to Area-Level Socioeconomic Deprivation in Subgroups Stratified by Genetic Risk
 
@@ -504,16 +727,21 @@ res_prs_high_pooled = coxmodel_then_pool(formula_string, data_ls, filter_cond = 
 # --------- print results table --------- #
 
 model_count = 0
-model_row_area() %>%  
+model_row_area("Low risk") %>%  
   rbind(print_hr_results_area(res_prs_low_pooled, data_ls[1] %>% as.data.frame() %>% filter(Sprs_tert == "Q1"))) %>% 
-  rbind(model_row_area()) %>% 
+  rbind(model_row_area("Intermediate risk")) %>% 
   rbind(print_hr_results_area(res_prs_intermediate_pooled, data_ls[1] %>% as.data.frame() %>% filter(Sprs_tert == "Q2-4"))) %>% 
-  rbind(model_row_area()) %>% 
+  rbind(model_row_area("High risk")) %>% 
   rbind(print_hr_results_area(res_prs_high_pooled, data_ls[1] %>% as.data.frame() %>% filter(Sprs_tert == "Q5"))) %>%
-  kable(align = "l")
+  kable(format = "latex", align = "l", booktabs = TRUE)  %>%
+  kableExtra::row_spec(c(0, 1, 4, 7), bold = T) %>% 
+  kableExtra::kable_styling(position = "center", latex_options = c("HOLD_position")) %>% 
+  kableExtra::column_spec(1:5, width = "3cm")
 ```
 
-## eTable 15. Risk of Dementia According to Individual-Level Socioeconomic Deprivation in Genetic Risk Strata
+\newpage
+
+## eTable 15. Risk of Dementia According to Individual-Level Socioeconomic Deprivation in Subgroups Stratified by Genetic Risk
 
 ```{r}
 formula_string = paste(formula_basic_c_string, "wwealth + tdi_bin + cnt1", sep = " + ")
@@ -533,17 +761,23 @@ res_individual_cont_prs_high_pooled = coxmodel_then_pool(formula_string, data_ls
 # --------- print results table --------- #
 
 model_count = 0
-model_row_individual() %>%  
+model_row_individual("Low risk") %>%  
   rbind(print_hr_results_individual(res_prs_low_pooled, data_ls[1] %>% as.data.frame() %>% filter(Sprs_tert == "Q1"),
                                     pvalue_for_trend = get_pvalue(res_individual_cont_prs_low_pooled))) %>% 
-  rbind(model_row_individual()) %>% 
+  rbind(model_row_individual("Intermediate risk")) %>% 
   rbind(print_hr_results_individual(res_prs_intermediate_pooled, data_ls[1] %>% as.data.frame() %>% filter(Sprs_tert == "Q2-4"), 
                                     pvalue_for_trend = get_pvalue(res_individual_cont_prs_intermediate_pooled))) %>% 
-  rbind(model_row_individual()) %>% 
+  rbind(model_row_individual("High risk")) %>% 
   rbind(print_hr_results_individual(res_prs_high_pooled, data_ls[1] %>% as.data.frame() %>% filter(Sprs_tert == "Q5"), 
                                     pvalue_for_trend = get_pvalue(res_individual_cont_prs_high_pooled))) %>%
-  kable(align = "l")
+  kable(format = "latex", align = "l", booktabs = TRUE)  %>% 
+  kableExtra::row_spec(c(0, 1, 5, 9), bold = T) %>% 
+  kableExtra::kable_styling(position = "center", latex_options = c("HOLD_position")) %>% 
+  kableExtra::column_spec(1, width = "3cm") %>% 
+  kableExtra::column_spec(2:6, width = "2.4cm")
 ```
+
+\newpage
 
 ## eTable 16. Risk of Dementia According to Area-Level Socioeconomic Deprivation in Subgroups Stratified by Sex
 
@@ -563,12 +797,17 @@ res_male_pooled = coxmodel_then_pool(formula_string, data_ls, filter_cond = c("s
 # --------- print results table --------- #
 
 model_count = 0
-model_row_area() %>%  
+model_row_area("Female") %>%  
   rbind(print_hr_results_area(res_fem_pooled, data_ls[1] %>% as.data.frame() %>% filter(sex == "0"))) %>% 
-  rbind(model_row_area()) %>% 
+  rbind(model_row_area("Male")) %>% 
   rbind(print_hr_results_area(res_male_pooled, data_ls[1] %>% as.data.frame() %>% filter(sex == "1"))) %>%
-  kable(align = "l")
+  kable(format = "latex", align = "l", booktabs = TRUE)  %>% 
+  kableExtra::row_spec(c(0, 1, 4, 7), bold = T) %>% 
+  kableExtra::kable_styling(position = "center", latex_options = c("HOLD_position")) %>% 
+  kableExtra::column_spec(1:5, width = "3cm")
 ```
+
+\newpage
 
 ## eTable 17. Risk of Dementia According to Individual-Level Socioeconomic Deprivation in Subgroups Stratified by Sex
 
@@ -587,14 +826,20 @@ res_individual_cont_male_pooled = coxmodel_then_pool(formula_string, data_ls, fi
 # --------- print results table --------- #
 
 model_count = 0
-model_row_individual() %>%  
+model_row_individual("Female") %>%  
   rbind(print_hr_results_individual(res_fem_pooled, data_ls[1] %>% as.data.frame() %>% filter(sex == 0), 
                                     pvalue_for_trend = get_pvalue(res_individual_cont_fem_pooled))) %>% 
-  rbind(model_row_individual()) %>% 
+  rbind(model_row_individual("Male")) %>% 
   rbind(print_hr_results_individual(res_male_pooled, data_ls[1] %>% as.data.frame() %>% filter(sex == 1), 
                                     pvalue_for_trend = get_pvalue(res_individual_cont_male_pooled))) %>% 
-  kable(align = "l")
+  kable(format = "latex", align = "l", booktabs = TRUE)  %>% 
+  kableExtra::row_spec(c(0, 1, 5, 9), bold = T) %>% 
+  kableExtra::kable_styling(position = "center", latex_options = c("HOLD_position")) %>% 
+  kableExtra::column_spec(1, width = "3cm") %>% 
+  kableExtra::column_spec(2:6, width = "2.4cm")
 ```
+
+\newpage
 
 ## eTable 18. Proportion of Individual-Level Socioeconomic Deprivation Across Lifestyle Categories in Complete-Case Data and Imputed Data for the Full Sample and Imaging Subsample
 
@@ -602,9 +847,18 @@ model_row_individual() %>%
 
 ```{r}
 cat("Complete Cases")
-final_vars_aug %>% proportion_individual_deprivation_lifestyle()
+print_proportion_individual_deprivation_lifestyle(final_vars_aug) %>% 
+  kable(format = "latex", align = "l", booktabs = TRUE) %>% 
+  kableExtra::row_spec(0, bold = T) %>% 
+  kableExtra::kable_styling(position = "center", latex_options = c("HOLD_position")) %>% 
+  kableExtra::column_spec(1:5, width = "3cm")
+
 cat("Imputed Data")
-final_vars_aug.imp1 %>% proportion_individual_deprivation_lifestyle()
+print_proportion_individual_deprivation_lifestyle(final_vars_aug.imp1) %>% 
+  kable(format = "latex", align = "l", booktabs = TRUE)  %>% 
+  kableExtra::row_spec(0, bold = T) %>% 
+  kableExtra::kable_styling(position = "center", latex_options = c("HOLD_position")) %>% 
+  kableExtra::column_spec(1:5, width = "3cm")
 ```
 
 ### Imaging Subset
@@ -613,12 +867,23 @@ final_vars_aug.imp1 %>% proportion_individual_deprivation_lifestyle()
 cat("Complete Cases")
 final_vars_aug %>% 
   drop_na(f.25781.2.0, f.25020.2.0, f.25019.2.0, f.25010.2.0, f.25008.2.0, f.25006.2.0) %>%
-  proportion_individual_deprivation_lifestyle()
+  print_proportion_individual_deprivation_lifestyle() %>% 
+  kable(format = "latex", align = "l", booktabs = TRUE)  %>% 
+  kableExtra::row_spec(0, bold = T) %>% 
+  kableExtra::kable_styling(position = "center", latex_options = c("HOLD_position")) %>% 
+  kableExtra::column_spec(1:5, width = "3cm")
+
 cat("Imputed Data")
 final_vars_aug.imp1 %>% 
   drop_na(f.25781.2.0, f.25020.2.0, f.25019.2.0, f.25010.2.0, f.25008.2.0, f.25006.2.0) %>%
-  proportion_individual_deprivation_lifestyle()
+  print_proportion_individual_deprivation_lifestyle() %>% 
+  kable(format = "latex", align = "l", booktabs = TRUE)  %>% 
+  kableExtra::row_spec(0, bold = T) %>% 
+  kableExtra::kable_styling(position = "center", latex_options = c("HOLD_position")) %>% 
+  kableExtra::column_spec(1:5, width = "3cm")
 ```
+
+\newpage
 
 ## eFigure 1. Risk of Incident Dementia According to Area-Level Socioeconomic Deprivation Quintiles
 
@@ -629,18 +894,22 @@ final_vars_aug.imp1 %>%
 res_area_5 = coxmodel_then_pool(paste(formula_basic_c_string, "Area.Deprivation", sep = " + "), data_ls)
 
 #png(filename = "./plots/efigure1.png", width = 8, res = 300, height = 5, units = "in")
-plot_hazards(res_area_5, exclude = c("pc", "degree", "sex", "edu", "age", "marital"))
+print_hazards(res_area_5, exclude = c("pc", "degree", "sex", "edu", "age", "marital"))
 #dev.off()
 ```
 
-## eFigure 2
+\newpage
 
-```{r fig.align="center", fig.width=12, fig.height=12}
+## eFigure 2. Proportion of Missing Data Prior to Imputation
+
+```{r fig.align="center", fig.width=9, fig.height=9}
 
 #png(filename = "./plots/efigure2.png", width = 10, res = 300, height = 10, units = "in")
-plot_efigure2("./data/20211015bd_ls_part1.dta")
+print_efigure2("./data/20211015bd_ls_part1.dta")
 #dev.off()
 ```
+
+\newpage
 
 ## eFigure 3. Risk of Incident Dementia by Area-Level Socioeconomic Deprivation and Genetic Risk Including Interaction Terms
 
@@ -651,9 +920,11 @@ plot_efigure2("./data/20211015bd_ls_part1.dta")
 res_area_x_Sprs_pooled = coxmodel_then_pool(paste(formula_basic_c_string, "cwwealth_inc + depress2 + cwlife2 + cnt1 + Sprs_tert * tdi_bin", sep = " + "), data_ls)
 
 #png(filename = "./plots/efigure3.png", width = 8, res = 300, height = 5, units = "in")
-plot_efigure3(res_area_x_Sprs_pooled)
+print_efigure3(res_area_x_Sprs_pooled)
 #dev.off()
 ```
+
+\newpage
 
 ## eFigure 4. Risk of Incident Dementia by Individual-Level Socioeconomic Deprivation and Genetic Risk Including Interaction Terms
 
@@ -664,7 +935,7 @@ plot_efigure3(res_area_x_Sprs_pooled)
 res_individual_x_Sprs_pooled = coxmodel_then_pool(paste(formula_basic_c_string, "tdi_bin + depress2 + cwlife2 + cnt1 + Sprs_tert * cwwealth_inc", sep = " + "), data_ls)
 
 #png(filename = "./plots/efigure4.png", width = 8, res = 300, height = 5, units = "in")
-plot_efigure4(res_individual_x_Sprs_pooled)
+print_efigure4(res_individual_x_Sprs_pooled)
 #dev.off()
 ```
 

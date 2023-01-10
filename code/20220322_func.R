@@ -11,7 +11,7 @@
 #### setup ####
 # Specify your packages
 my_packages <- c("tidyverse", "knitr", "survival", 
-                 "broom", "mice", "cobalt",
+                 "broom", "mice", "cobalt", "kableExtra",
                  "datawizard", "ggplot2", "scales",
                  "haven", "epiR", "ipw", "survey")
 # Extract not installed packages
@@ -23,6 +23,7 @@ if(length(not_installed)) install.packages(not_installed)
 #### packages ####
 library(tidyverse)
 library(knitr)
+library(kableExtra)
 library(survival)
 library(broom)
 library(mice)
@@ -363,9 +364,9 @@ set_ds_simple = function(i, data_ls){
       age_at_scan = age + time_since_recruitement,
       
       # rename main IVs
-      Area_Deprivation = factor(case_when(tdi_bin == "high deprivation" ~ "High", tdi_bin == "low-to-moderate deprivation" ~ "Low to Moderate"), levels = c("Low to Moderate", "High")),
-      Individual_Deprivation = factor(case_when(cwwealth_inc == "high deprivation" ~ "High", cwwealth_inc == "intermediate deprivation" ~ "Intermediate", cwwealth_inc == "low deprivation" ~ "Low"), levels = c("Low", "Intermediate", "High")),
-      Genetic_Risk = factor(case_when(Sprs_tert == "Q5" ~ "High", Sprs_tert == "Q2-4" ~ "Intermediate", Sprs_tert == "Q1" ~ "Low"), levels = c("Low", "Intermediate", "High")),
+      Area_Deprivation = factor(case_when(tdi_bin == "high deprivation" ~ "high", tdi_bin == "low-to-moderate deprivation" ~ "low-to-moderate"), levels = c("low-to-moderate", "high")),
+      Individual_Deprivation = factor(case_when(cwwealth_inc == "high deprivation" ~ "high", cwwealth_inc == "intermediate deprivation" ~ "intermediate", cwwealth_inc == "low deprivation" ~ "low"), levels = c("low", "intermediate", "high")),
+      Genetic_Risk = factor(case_when(Sprs_tert == "Q5" ~ "high", Sprs_tert == "Q2-4" ~ "intermediate", Sprs_tert == "Q1" ~ "low"), levels = c("low", "intermediate", "high")),
       
       # dummy codes for site
       site1 = factor(ifelse(f.54.2.0 == "11025", 1, 0)),
@@ -647,30 +648,32 @@ print_2step_reg_results = function(variable, data_ls){
   
   # --------- neat printing --------- #
   
-  kables(
-    list(kable(tidy(res_basic_pooled, conf.int = T) %>% 
-                 filter(grepl("Area", term) | grepl("Individual", term)) %>% 
-                 mutate(term = str_replace(term, "Individual_Deprivation", "Individual Deprivation "), 
-                        term = str_replace(term, "Area_Deprivation", "Area Deprivation "), 
-                        `Coefficient (95% CI)`= paste0(sprintf("%.2f", round(estimate, 3)), " (", sprintf("%.2f", round(conf.low, 3)), "-", sprintf("%.2f", round(conf.high, 3)), ")"), 
-                        SE = sprintf("%.2f", round(std.error, 3)),
-                        `P value` = ifelse(p.value < .001, "<.001", as.character(sprintf("%.3f", round(p.value, 5))))) %>% 
-                 dplyr::select(term, `Coefficient (95% CI)`, SE, `P value`), digits = 4),
-         kable(tidy(res_SIMPLE_pooled, conf.int = T) %>% 
-                 filter(grepl("Area", term) | grepl("Individual", term)) %>% 
-                 mutate(term = str_replace(term, "Individual_Deprivation", "Individual Deprivation "), 
-                        term = str_replace(term, "Area_Deprivation", "Area Deprivation "), 
-                        `Coefficient (95% CI)`= paste0(sprintf("%.2f", round(estimate, 3)), " (", sprintf("%.2f", round(conf.low, 3)), "-", sprintf("%.2f", round(conf.high, 3)), ")"), 
-                        SE = sprintf("%.2f", round(std.error, 3)), 
-                        `P value` = ifelse(p.value < .001, "<.001", as.character(sprintf("%.3f", round(p.value, 5))))) %>% 
-                 dplyr::select(term, `Coefficient (95% CI)`, SE, `P value`), digits = 4)), 
-    caption = paste0("Variable = ", variable, " (Total No. = ", ds_SIMPLE %>% nrow(), ")"))
+  res_table = tidy(res_basic_pooled, conf.int = T) %>% 
+    filter(grepl("Area", term) | grepl("Individual", term)) %>% 
+    mutate(Set = c("Basic Confounders", " ", " "),
+           term = str_replace(term, "Individual_Deprivation", "Individual deprivation "), 
+           Term = str_replace(term, "Area_Deprivation", "Area deprivation "), 
+           `Coefficient (95% CI)`= paste0(sprintf("%.2f", round(estimate, 3)), " (", sprintf("%.2f", round(conf.low, 3)), "-", sprintf("%.2f", round(conf.high, 3)), ")"), 
+           SE = sprintf("%.2f", round(std.error, 3)),
+           `P value` = ifelse(p.value < .001, "<.001", as.character(sprintf("%.3f", round(p.value, 5))))) %>% 
+    dplyr::select(Set, Term, `Coefficient (95% CI)`, SE, `P value`) %>% 
+    rbind(tidy(res_SIMPLE_pooled, conf.int = T) %>% 
+            filter(grepl("Area", term) | grepl("Individual", term)) %>% 
+            mutate(Set = c("SIMPLE Confounders", " ", " "),
+                   term = str_replace(term, "Individual_Deprivation", "Individual deprivation "), 
+                   Term = str_replace(term, "Area_Deprivation", "Area deprivation "), 
+                   `Coefficient (95% CI)`= paste0(sprintf("%.2f", round(estimate, 3)), " (", sprintf("%.2f", round(conf.low, 3)), "-", sprintf("%.2f", round(conf.high, 3)), ")"), 
+                   SE = sprintf("%.2f", round(std.error, 3)), 
+                   `P value` = ifelse(p.value < .001, "<.001", as.character(sprintf("%.3f", round(p.value, 5))))) %>% 
+            dplyr::select(Set, Term, `Coefficient (95% CI)`, SE, `P value`)) 
   
-  #return(res_SIMPLE)
+  cat(paste0("Variable = ", variable, " (Total No. = ", ds_SIMPLE %>% nrow(), ")"))
+  
+  return(res_table)
 } 
 
 #### demographics ####
-plot_n_and_pct = function(variable, value){
+print_n_and_pct = function(variable, value){
   ### calculates and prints total N and percentage of categorical demo characteristics
   ### requires:
   ### variable: string indicating characteristic of interest
@@ -693,7 +696,7 @@ print_table1 = function(rbind_data){
   ### requires:
   ### rbind_data: data frame in long format
   
-  rbind_data %>% 
+  res_table = rbind_data %>% 
     
     ## incident dementia cases
     mutate(inc.dem = 
@@ -712,37 +715,37 @@ print_table1 = function(rbind_data){
       summarise(`Age (SD)` = paste0(as.character(round(mean(age), 1)), " (", as.character(round(sd(age), 1)), ")"),
                 
                 Sex = "",
-                Female = plot_n_and_pct(sex, 0),
-                Male = plot_n_and_pct(sex, 1),
+                Female = print_n_and_pct(sex, 0),
+                Male = print_n_and_pct(sex, 1),
                 
                 Education = "",
-                High = plot_n_and_pct(edu_new, "high edu"),
-                Medium = plot_n_and_pct(edu_new, "medium edu"),
-                Low = plot_n_and_pct(edu_new, "low edu"),
-                Other = plot_n_and_pct(edu_new, "prefer not to answer edu / none of above"),
+                High = print_n_and_pct(edu_new, "high edu"),
+                Medium = print_n_and_pct(edu_new, "medium edu"),
+                Low = print_n_and_pct(edu_new, "low edu"),
+                Other = print_n_and_pct(edu_new, "prefer not to answer edu / none of above"),
                 
-                `Married or in a relationship` = plot_n_and_pct(marital_status, "married / relationship"),
+                `Married or in a relationship` = print_n_and_pct(marital_status, "married / relationship"),
                 
                 `Healthy Lifestyle categories` = "", 
-                `Favorable` = plot_n_and_pct(cwlife2, "favorable ls"),
-                `Intermediate` = plot_n_and_pct(cwlife2, "intermediate ls"),
-                `Unfavorable` = plot_n_and_pct(cwlife2, "unfavorable ls"),
+                `Favorable` = print_n_and_pct(cwlife2, "favorable ls"),
+                `Intermediate` = print_n_and_pct(cwlife2, "intermediate ls"),
+                `Unfavorable` = print_n_and_pct(cwlife2, "unfavorable ls"),
                 
-                `Depressive symptoms in last 2 weeks` = plot_n_and_pct(depress2, "several days, more than half or nearly every day"),
+                `Depressive symptoms in last 2 weeks` = print_n_and_pct(depress2, "several days, more than half or nearly every day"),
                 
                 `Individual deprivation quintile` = "",
-                `1 (low)` = plot_n_and_pct(cwwealth_inc, "low deprivation"),
-                `2-4` = plot_n_and_pct(cwwealth_inc, "intermediate deprivation"),
-                `5 (high)` = plot_n_and_pct(cwwealth_inc, "high deprivation"),
+                `1 (low)` = print_n_and_pct(cwwealth_inc, "low deprivation"),
+                `2-4` = print_n_and_pct(cwwealth_inc, "intermediate deprivation"),
+                `5 (high)` = print_n_and_pct(cwwealth_inc, "high deprivation"),
                 
                 `Area deprivation quintile` = "", 
-                `1-4 (low-to-moderate)` = plot_n_and_pct(tdi_bin, "low-to-moderate deprivation"),
-                `5 (high) ` = plot_n_and_pct(tdi_bin, "high deprivation"),
+                `1-4 (low-to-moderate)` = print_n_and_pct(tdi_bin, "low-to-moderate deprivation"),
+                `5 (high) ` = print_n_and_pct(tdi_bin, "high deprivation"),
                 
                 `Genetic risk category` = "",
-                `1 (low) ` = plot_n_and_pct(Sprs_tert, "Q1"),
-                `2-4 ` = plot_n_and_pct(Sprs_tert, "Q2-4"),
-                `5 (high)  ` = plot_n_and_pct(Sprs_tert, "Q5")) %>% 
+                `1 (low) ` = print_n_and_pct(Sprs_tert, "Q1"),
+                `2-4 ` = print_n_and_pct(Sprs_tert, "Q2-4"),
+                `5 (high)  ` = print_n_and_pct(Sprs_tert, "Q5")) %>% 
       
       ## wide to long (1 row per summary of incident vs no incident dementia)
       pivot_longer(cols = -contains("inc.dem"),
@@ -750,10 +753,9 @@ print_table1 = function(rbind_data){
                    values_to = "value") %>%
       
       ## long to wide (1 row per summary 1 col for incident vs no incident dementia)
-      pivot_wider(names_from = "inc.dem") %>% 
-      
-      ## neat printing
-      kable(align = "l")
+      pivot_wider(names_from = "inc.dem") 
+  
+  return(res_table)
 }
 print_figure1_res_table = function(group, mod){
   ### outputs result tables accompanying figure 1
@@ -791,7 +793,14 @@ print_figure1_res_table = function(group, mod){
                        `HR (95% CI)` = hr,
                        `P Value` = p.value,
                        `Lower CI` = conf.low,
-                       `Upper CI` = conf.high))
+                       `Upper CI` = conf.high)) %>% 
+    mutate(`Deprivation and Genetic Risk` = str_replace(`Deprivation and Genetic Risk`, "Q1 ", ""),
+           `Deprivation and Genetic Risk` = str_replace(`Deprivation and Genetic Risk`, "Q1-4 ", ""),
+           `Deprivation and Genetic Risk` = str_replace(`Deprivation and Genetic Risk`, "Q2-4 ", ""),
+           `Deprivation and Genetic Risk` = str_replace(`Deprivation and Genetic Risk`, "Q5 ", ""),
+           `Deprivation and Genetic Risk` = str_replace(`Deprivation and Genetic Risk`, " Q1", ""),
+           `Deprivation and Genetic Risk` = str_replace(`Deprivation and Genetic Risk`, " Q2-4", ""),
+           `Deprivation and Genetic Risk` = str_replace(`Deprivation and Genetic Risk`, " Q5", ""),)
 }
 print_hr_results_area = function(model, data){
   ### outputs results table including HRs and p values for area deprivation
@@ -899,16 +908,17 @@ print_hr_results_individual = function(model, data, pvalue_for_trend){
   
   return(table)
 }
-model_row_area = function(){
+model_row_area = function(mod_name = NA){
   ### provides area-level socioeconomic deprivation table row indicating model number for easier copying 
-  
+  ### optional:
+  ### mod_name: naming other then counts
   
   # count models
   model_count <<- model_count + 1 
   
   # set model row
   model_row = data.frame(starter = "") %>% 
-    mutate(`Area-Level Socioeconomic Deprivation` = paste0("Model ", model_count), 
+    mutate(`Area-Level Socioeconomic Deprivation` = paste0("Model ", ifelse(is.na(mod_name), model_count, mod_name)), 
            `Total No.` = "",
            `No. of dementia cases/person-years` = "", 
            `HR (95% CI)` = "", 
@@ -917,7 +927,7 @@ model_row_area = function(){
   
   return(model_row)
 }
-model_row_individual = function(){
+model_row_individual = function(mod_name = NA){
   ### provides individual-level socioeconomic deprivation table row indicating model number for easier copying
   
   
@@ -926,7 +936,7 @@ model_row_individual = function(){
   
   # set model row
   model_row = data.frame(starter = "") %>% 
-    mutate(`Individual-Level Socioeconomic Deprivation` = paste0("Model ", model_count), 
+    mutate(`Individual-Level Socioeconomic Deprivation` = paste0("Model ", ifelse(is.na(mod_name), model_count, mod_name)), 
            `Total No.` = "",
            `No. of dementia cases/person-years` = "", 
            `HR (95% CI)` = "", 
@@ -936,7 +946,7 @@ model_row_individual = function(){
   
   return(model_row)
 }
-plot_hazards = function(fit, exclude){
+print_hazards = function(fit, exclude){
   ### plots hazard ratios on a log10 scale including 95% CIs
   ### requires:
   ### fit: a fit object resulting from coxph (can be also pooled)
@@ -983,7 +993,7 @@ plot_hazards = function(fit, exclude){
     xlab("") +
     ylab("Hazard Ratio") +
     theme_bw() +
-    theme(panel.grid = element_blank(), panel.border = element_blank(), panel.background = element_blank(), axis.line.x = element_line(), axis.line.y = element_blank(), axis.ticks.y = element_blank(), axis.text = element_text(family = "Arial", colour="black", size=10), axis.title.y = element_blank(), axis.text.y = element_text(hjust = 0))
+    theme(panel.grid = element_blank(), panel.border = element_blank(), panel.background = element_blank(), axis.line.x = element_line(), axis.line.y = element_blank(), axis.ticks.y = element_blank(), axis.text = element_text(colour="black", size=10), axis.title.y = element_blank(), axis.text.y = element_text(hjust = 0))
 }
 
 #### supplementary ####
@@ -1005,7 +1015,7 @@ print_etable1 = function(res_individual_weights, dat){
   n_bin1_vehicle = dat %>% group_by(score_vehicles_bin) %>% summarise(n = n())
   
   ## print results table
-  res_individual_weights %>% 
+  res_table = res_individual_weights %>% 
     filter(grepl("score", term) | grepl("avg", term)) %>% 
     mutate(`Coefficient (95% CI)`= paste0(sprintf("%.2f", round(estimate, 3)), " (", sprintf("%.2f", round(conf.low, 3)), "-", sprintf("%.2f", round(conf.high, 3)), ")"), 
            SE = sprintf("%.2f", round(std.error, 3)),
@@ -1013,27 +1023,28 @@ print_etable1 = function(res_individual_weights, dat){
            term = str_replace(term, "avg_hhl_income_b_tax", ""),
            term = str_replace(term, "score_accommodation_type_bin", ""),
            term = str_replace(term, "score_accommodation_asset_bin", ""),
-           term = str_replace(term, "score_vehicles_bin", "")) %>%
-    dplyr::select(term, `Coefficient (95% CI)`, `P value`) %>% 
+           Term = str_replace(term, "score_vehicles_bin", "")) %>%
+    dplyr::select(Term, `Coefficient (95% CI)`, `P value`) %>% 
     ## init placeholder rows
-    add_row(term = "Income", `Coefficient (95% CI)` = "", `P value` = "", .after = 0) %>% 
-    add_row(term = "income greater 31,000", `Coefficient (95% CI)` = "0 [Reference]", `P value` = "", .after = 1) %>%
-    add_row(term = "Housing Type", `Coefficient (95% CI)` = "", `P value` = "", .after = 5) %>% 
-    add_row(term = "house or flat", `Coefficient (95% CI)` = "0 [Reference]", `P value` = "", .after = 6) %>%
-    add_row(term = "Home Ownership", `Coefficient (95% CI)` = "", `P value` = "", .after = 8) %>% 
-    add_row(term = "own outright", `Coefficient (95% CI)` = "0 [Reference]", `P value` = "", .after = 9) %>%
-    add_row(term = "Car Ownership", `Coefficient (95% CI)` = "", `P value` = "", .after = 11) %>% 
-    add_row(term = "one or more", `Coefficient (95% CI)` = "0 [Reference]", `P value` = "", .after = 12) %>%
+    add_row(Term = "Income", `Coefficient (95% CI)` = "", `P value` = "", .after = 0) %>% 
+    add_row(Term = "income greater 31,000", `Coefficient (95% CI)` = "0 [Reference]", `P value` = "", .after = 1) %>%
+    add_row(Term = "Housing Type", `Coefficient (95% CI)` = "", `P value` = "", .after = 5) %>% 
+    add_row(Term = "house or flat", `Coefficient (95% CI)` = "0 [Reference]", `P value` = "", .after = 6) %>%
+    add_row(Term = "Home Ownership", `Coefficient (95% CI)` = "", `P value` = "", .after = 8) %>% 
+    add_row(Term = "own outright", `Coefficient (95% CI)` = "0 [Reference]", `P value` = "", .after = 9) %>%
+    add_row(Term = "Car Ownership", `Coefficient (95% CI)` = "", `P value` = "", .after = 11) %>% 
+    add_row(Term = "one or more", `Coefficient (95% CI)` = "0 [Reference]", `P value` = "", .after = 12) %>%
     mutate(Total = c("", n_bin1_income$n, "", n_bin1_accomtype$n, "", n_bin1_accomasset$n, "", n_bin1_vehicle$n)) %>% 
-    filter(Total != 0) %>% 
-    kable(align = "l", digits = 3)
+    filter(Total != 0)
+  
+  return(res_table)
 }
-print_etable1213 = function(res_area_complete, combined_groups){
+print_etable1213 = function(res_complete, combined_groups){
   ### prints supplementary table 12 based on cox proportional-hazards regression
   ### based on combined groups of genetic risk and socioeconomic deprivation
   ### based on complete case data
   ### requires:
-  ### res_area_complete: cox model
+  ### res_complete: cox model
   ### combined_groups: string indicating area or individual level combinations
   
   
@@ -1055,7 +1066,7 @@ print_etable1213 = function(res_area_complete, combined_groups){
     select(-contains("_")) %>% 
     
     ## join HRs, confidence intervals and p values
-    left_join(res_area_complete %>%
+    left_join(res_complete %>%
                 tidy(exponentiate = TRUE, conf.int = T) %>% 
                 mutate(term = str_replace(term, "tdi_Sprs", ""),
                        term = str_replace(term, "wealth_Sprs", ""),
@@ -1063,7 +1074,7 @@ print_etable1213 = function(res_area_complete, combined_groups){
                        conf.low = sprintf("%.2f", round(conf.low, 3)),
                        conf.high = sprintf("%.2f", round(conf.high, 3)),
                        p.value = ifelse(p.value < .001, "<.001", as.character(sprintf("%.3f", round(p.value, 4))))) %>% 
-                filter(grepl("Q", term)) %>% 
+                filter(grepl("deprivation)", term)) %>% 
                 select(term, estimate, contains("conf"), p.value) %>%
                 mutate_if(is.double, as.numeric) %>% 
                 mutate_if(is.numeric, as.character) %>% 
@@ -1073,57 +1084,74 @@ print_etable1213 = function(res_area_complete, combined_groups){
               by = c("Genetic risk and deprivation" = "term"))
   
   if(combined_groups == "tdi_Sprs"){
-    res_table$`Genetic risk and deprivation` = 
-      factor(res_table$`Genetic risk and deprivation`,
-             levels = c("Q5 (high risk) Q5 (high deprivation)", 
-                        "Q5 (high risk) Q1-4 (low-to-moderate deprivation)", 
-                        "Q2-4 (intermediate risk) Q5 (high deprivation)", 
-                        "Q2-4 (intermediate risk) Q1-4 (low-to-moderate deprivation)", 
-                        "Q1 (low risk) Q5 (high deprivation)", 
-                        "Q1 (low risk) Q1-4 (low-to-moderate deprivation)"))
+    res_table = res_table %>% 
+      mutate(`Genetic risk and deprivation` = str_replace(`Genetic risk and deprivation`, "Q1 ", ""),
+             `Genetic risk and deprivation` = str_replace(`Genetic risk and deprivation`, "Q1-4 ", ""),
+             `Genetic risk and deprivation` = str_replace(`Genetic risk and deprivation`, "Q2-4 ", ""),
+             `Genetic risk and deprivation` = str_replace(`Genetic risk and deprivation`, "Q5 ", ""),
+             `Genetic risk and deprivation` = str_replace(`Genetic risk and deprivation`, " Q5", ""),
+             `Genetic risk and deprivation` = factor(`Genetic risk and deprivation`,
+                                                     levels = c("(high risk) (high deprivation)", 
+                                                                "(high risk) (low-to-moderate deprivation)", 
+                                                                "(intermediate risk) (high deprivation)", 
+                                                                "(intermediate risk) (low-to-moderate deprivation)", 
+                                                                "(low risk) (high deprivation)", 
+                                                                "(low risk) (low-to-moderate deprivation)")))
   }
   else{
-    res_table$`Genetic risk and deprivation` = 
-      factor(res_table$`Genetic risk and deprivation`,
-             levels = c("Q5 (high risk) Q5 (high deprivation)", 
-                        "Q5 (high risk) Q2-4 (intermediate deprivation)", 
-                        "Q5 (high risk) Q1 (low deprivation)", 
-                        "Q2-4 (intermediate risk) Q5 (high deprivation)",
-                        "Q2-4 (intermediate risk) Q2-4 (intermediate deprivation)", 
-                        "Q2-4 (intermediate risk) Q1 (low deprivation)", 
-                        "Q1 (low risk) Q5 (high deprivation)", 
-                        "Q1 (low risk) Q2-4 (intermediate deprivation)", 
-                        "Q1 (low risk) Q1 (low deprivation)"))
+    res_table = res_table %>% 
+      mutate(`Genetic risk and deprivation` = str_replace(`Genetic risk and deprivation`, "Q1 ", ""),
+             `Genetic risk and deprivation` = str_replace(`Genetic risk and deprivation`, " Q1", ""),
+             `Genetic risk and deprivation` = str_replace(`Genetic risk and deprivation`, "Q1-4 ", ""),
+             `Genetic risk and deprivation` = str_replace(`Genetic risk and deprivation`, "Q2-4 ", ""),
+             `Genetic risk and deprivation` = str_replace(`Genetic risk and deprivation`, " Q2-4", ""),
+             `Genetic risk and deprivation` = str_replace(`Genetic risk and deprivation`, "Q5 ", ""),
+             `Genetic risk and deprivation` = str_replace(`Genetic risk and deprivation`, " Q5", ""),
+             `Genetic risk and deprivation` = factor(`Genetic risk and deprivation`,
+                                                     levels = c("(high risk) (high deprivation)", 
+                                                                "(high risk) (intermediate deprivation)", 
+                                                                "(high risk) (low deprivation)", 
+                                                                "(intermediate risk) (high deprivation)",
+                                                                "(intermediate risk) (intermediate deprivation)", 
+                                                                "(intermediate risk) (low deprivation)", 
+                                                                "(low risk) (high deprivation)", 
+                                                                "(low risk) (intermediate deprivation)", 
+                                                                "(low risk) (low deprivation)")))
   }
   
   
   ## print data table
-  res_table %>% 
+  res_table = res_table %>% 
     transmute(`Genetic risk and deprivation` = `Genetic risk and deprivation`,
               `Total No. of participants` = `Total No. of participants`,
               `No. of dementia cases/person-years` = `No. of dementia cases/person-years`,
               `HR (95% CI) `= paste0(estimate, " (", conf.low, "-", conf.high, ")"),
               `HR (95% CI) `= ifelse(grepl("Reference", `HR (95% CI) `), "1 [Reference]", `HR (95% CI) `),
-              `P value` = p.value) %>% 
-    kable(align = "l")
+              `P value` = p.value)
+  
+  return(res_table)
 }
-proportion_individual_deprivation_lifestyle = function(data){
+print_proportion_individual_deprivation_lifestyle = function(data){
   ### outputs table with proportion of cases according to lifestyle and individual-level socioeconomic deprivation
   ### requires:
   ### data: data frame
   
   
-  data %>% 
-    mutate(Lifestyle = str_replace(cwlife2, " ls", "")) %>% 
+  res_table = data %>% 
+    mutate(Lifestyle = str_replace(cwlife2, "unfavorable ls", "Unfavorable"),
+           Lifestyle = str_replace(Lifestyle, "intermediate ls", "Intermediate"),
+           Lifestyle = str_replace(Lifestyle, "favorable ls", "Favorable")) %>% 
     group_by(Lifestyle, cwwealth_inc) %>% 
     summarise(n = n()) %>% 
     pivot_wider(names_from = cwwealth_inc, values_from = n) %>% 
-    mutate(total = `low deprivation` + `intermediate deprivation` + `high deprivation`, 
-           `high deprivation` = round(`high deprivation`/total*100, 2),
-           `low deprivation` = round(`low deprivation`/total*100, 2),
-           `intermediate deprivation` = round(`intermediate deprivation`/total*100, 2))
+    transmute(Total = `low deprivation` + `intermediate deprivation` + `high deprivation`, 
+              `High deprivation` = round(`high deprivation`/Total*100, 2),
+              `Low deprivation` = round(`low deprivation`/Total*100, 2),
+              `Intermediate deprivation` = round(`intermediate deprivation`/Total*100, 2))
+  
+  return(res_table)
 }
-plot_efigure2 = function(path_to_ls_part1.dta){
+print_efigure2 = function(path_to_ls_part1.dta){
   ### plots eFigure 2
   ### requires:
   ### path_to_ls_part1.dta: path to outfile of 20211012_lifestyle_part1.do
@@ -1210,14 +1238,14 @@ plot_efigure2 = function(path_to_ls_part1.dta){
           panel.background = element_blank(), 
           axis.line.x = element_line(), 
           axis.line.y = element_line(), 
-          axis.text = element_text(colour="black", size=10)) + # optional family = "Arial"
+          axis.text = element_text(colour="black", size=10)) + 
     xlab("Variables Used in Multiple Imputation") +
     ylab("Proportion of Missing Values (%)") +
     scale_y_continuous(limits = c(0, 100))
   
   return(eFigure2)
 }
-plot_efigure3 = function(res_area_x_Sprs_pooled){
+print_efigure3 = function(res_area_x_Sprs_pooled){
   ### plots eFigure 3
   ### requires:
   ### res_area_x_Sprs_pooled: cox model resulting from coxph
@@ -1268,11 +1296,11 @@ plot_efigure3 = function(res_area_x_Sprs_pooled){
     xlab("") +
     ylab("Hazard Ratio") +
     theme_bw() +
-    theme(panel.grid = element_blank(), panel.border = element_blank(), panel.background = element_blank(), axis.line.x = element_line(), axis.line.y = element_blank(), axis.ticks.y = element_blank(), axis.text = element_text(colour="black", size=10), axis.title.y = element_blank(), axis.text.y = element_text(hjust = 0)) # optional family = "Arial"
+    theme(panel.grid = element_blank(), panel.border = element_blank(), panel.background = element_blank(), axis.line.x = element_line(), axis.line.y = element_blank(), axis.ticks.y = element_blank(), axis.text = element_text(colour="black", size=10), axis.title.y = element_blank(), axis.text.y = element_text(hjust = 0)) 
   
   return(efigure3)
 }
-plot_efigure4 = function(res_individual_x_Sprs_pooled){
+print_efigure4 = function(res_individual_x_Sprs_pooled){
   ### plots eFigure 4
   ### requires:
   ### res_individual_x_Sprs_pooled: cox model resulting from coxph
@@ -1326,7 +1354,7 @@ plot_efigure4 = function(res_individual_x_Sprs_pooled){
     xlab("") +
     ylab("Hazard Ratio") +
     theme_bw() +
-    theme(panel.grid = element_blank(), panel.border = element_blank(), panel.background = element_blank(), axis.line.x = element_line(), axis.line.y = element_blank(), axis.ticks.y = element_blank(), axis.text = element_text(colour="black", size=10), axis.title.y = element_blank(), axis.text.y = element_text(hjust = 0)) # optional family = "Arial"
+    theme(panel.grid = element_blank(), panel.border = element_blank(), panel.background = element_blank(), axis.line.x = element_line(), axis.line.y = element_blank(), axis.ticks.y = element_blank(), axis.text = element_text(colour="black", size=10), axis.title.y = element_blank(), axis.text.y = element_text(hjust = 0)) 
   
   return(efigure4)
 }
