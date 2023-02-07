@@ -63,7 +63,7 @@ You can then either load your data following the naming conventions that are ill
 ```{r}
 variables = read.csv2("./data/variables.csv", col.names = c("Variable", "Definition", "Type", "Scale"))
 variables %>% kable(format = "latex",
-                    align = "l",
+                    align = "l", 
                     booktabs = TRUE,
                     longtable = TRUE,
                     linesep = "") %>% 
