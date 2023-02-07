@@ -108,7 +108,7 @@ inc_est = function(variable){
     cbind(epi_dat$`No. of Dementia Cases`, epi_dat$n_years) %>% as.matrix(), 
     ctype = "inc.rate", 
     method = "exact") %>% 
-    transmute(`Incidence Rates per 1,000 Person-Years` = est, `CI lower` = lower, `CI upper` = upper)
+    transmute(`Incidence Rates per 1,000 Person-Years` = est, `CI lower` = lower, `CI upper` = upper, deprivation = epi_dat[[variable]])
   
   return(inc_temp)
 }
@@ -127,7 +127,7 @@ risk_est = function(variable){
     cbind(epi_dat$`No. of Dementia Cases`, epi_dat$`Total No.`) %>% as.matrix(), 
     ctype = "inc.risk", 
     method = "exact") %>% 
-    transmute(`Absolute Risk` = est*100, `CI Lower` = lower*100, `CI Upper` = upper*100)
+    transmute(`Absolute Risk` = est*100, `CI Lower` = lower*100, `CI Upper` = upper*100, deprivation = epi_dat[[variable]])
   
   return(risk_temp)
   
@@ -560,6 +560,8 @@ print_figure1_restable = function(variable, mod){
   ### variable: variable name for which combination results should be printed (either tdi_Sprs or wealth_Sprs)
   ### mod: model including coefficients for chosen combination variable
   
+  if(variable == "tdi_Sprs") {ref = "Q1 (low risk) Q1-4 (low-to-moderate deprivation)"}
+  if(variable == "wealth_Sprs") {ref = "Q1 (low risk) Q1 (low deprivation)"}
   
   ## choose e.g. first imputed data set for descriptives
   ds_list[1] %>% as.data.frame() %>% 
@@ -571,7 +573,7 @@ print_figure1_restable = function(variable, mod){
     rename_with(function(x) ifelse(x == variable, "Deprivation and Genetic Risk", x)) %>% 
     
     ## join HRs, confidence intervals and p values
-    left_join(data.frame(term = "Q1 (low risk) Q1-4 (low-to-moderate deprivation)", 
+    left_join(data.frame(term = ref, 
                          hr = "1 [Reference]", 
                          conf.low = "",
                          conf.high = "",
@@ -591,13 +593,7 @@ print_figure1_restable = function(variable, mod){
                        `P Value` = p.value,
                        `Lower CI` = conf.low,
                        `Upper CI` = conf.high)) %>% 
-    mutate(`Deprivation and Genetic Risk` = str_replace(`Deprivation and Genetic Risk`, "Q1 ", ""),
-           `Deprivation and Genetic Risk` = str_replace(`Deprivation and Genetic Risk`, "Q1-4 ", ""),
-           `Deprivation and Genetic Risk` = str_replace(`Deprivation and Genetic Risk`, "Q2-4 ", ""),
-           `Deprivation and Genetic Risk` = str_replace(`Deprivation and Genetic Risk`, "Q5 ", ""),
-           `Deprivation and Genetic Risk` = str_replace(`Deprivation and Genetic Risk`, " Q1", ""),
-           `Deprivation and Genetic Risk` = str_replace(`Deprivation and Genetic Risk`, " Q2-4", ""),
-           `Deprivation and Genetic Risk` = str_replace(`Deprivation and Genetic Risk`, " Q5", ""),)
+    mutate(`Deprivation and Genetic Risk` = recode_mixed_deprivation(`Deprivation and Genetic Risk`))
 }
 print_hr_restable_area = function(mod, ds){
   ### outputs results table including HRs and p values for area deprivation
@@ -744,6 +740,22 @@ add_restable_row_individual = function(mod_name = NA){
   
   return(model_row)
 }
+recode_mixed_deprivation = function(x){
+  ### recodes deprivation and genetic risk categories to ignore quintile ids
+  ### requires:
+  ### x: column to recode
+  
+  
+  x = str_replace(x, "Q1 ", "")
+  x = str_replace(x, "Q1-4 ", "")
+  x = str_replace(x, "Q2-4 ", "")
+  x = str_replace(x, "Q5 ", "")
+  x = str_replace(x, " Q1", "")
+  x = str_replace(x, " Q2-4", "")
+  x = str_replace(x, " Q5", "")
+  
+  return(x)
+}
 
 #### supplementary ####
 print_etable1 = function(mod, ds){
@@ -834,11 +846,7 @@ print_etable1213 = function(mod, variable){
   
   if(variable == "tdi_Sprs"){
     res_table = res_table %>% 
-      mutate(`Genetic risk and deprivation` = str_replace(`Genetic risk and deprivation`, "Q1 ", ""),
-             `Genetic risk and deprivation` = str_replace(`Genetic risk and deprivation`, "Q1-4 ", ""),
-             `Genetic risk and deprivation` = str_replace(`Genetic risk and deprivation`, "Q2-4 ", ""),
-             `Genetic risk and deprivation` = str_replace(`Genetic risk and deprivation`, "Q5 ", ""),
-             `Genetic risk and deprivation` = str_replace(`Genetic risk and deprivation`, " Q5", ""),
+      mutate(`Genetic risk and deprivation` = recode_mixed_deprivation(`Genetic risk and deprivation`),
              `Genetic risk and deprivation` = factor(`Genetic risk and deprivation`,
                                                      levels = c("(high risk) (high deprivation)", 
                                                                 "(high risk) (low-to-moderate deprivation)", 
@@ -849,13 +857,7 @@ print_etable1213 = function(mod, variable){
   }
   else{
     res_table = res_table %>% 
-      mutate(`Genetic risk and deprivation` = str_replace(`Genetic risk and deprivation`, "Q1 ", ""),
-             `Genetic risk and deprivation` = str_replace(`Genetic risk and deprivation`, " Q1", ""),
-             `Genetic risk and deprivation` = str_replace(`Genetic risk and deprivation`, "Q1-4 ", ""),
-             `Genetic risk and deprivation` = str_replace(`Genetic risk and deprivation`, "Q2-4 ", ""),
-             `Genetic risk and deprivation` = str_replace(`Genetic risk and deprivation`, " Q2-4", ""),
-             `Genetic risk and deprivation` = str_replace(`Genetic risk and deprivation`, "Q5 ", ""),
-             `Genetic risk and deprivation` = str_replace(`Genetic risk and deprivation`, " Q5", ""),
+      mutate(`Genetic risk and deprivation` = recode_mixed_deprivation(`Genetic risk and deprivation`, "Q1 ", ""),
              `Genetic risk and deprivation` = factor(`Genetic risk and deprivation`,
                                                      levels = c("(high risk) (high deprivation)", 
                                                                 "(high risk) (intermediate deprivation)", 

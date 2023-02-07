@@ -77,7 +77,6 @@ variables %>% kable(format = "latex",
 
 ```{r}
 # load files (5 imputed data files, 1 complete case data file)
-# ADAPT THIS TO LOAD YOUR OWN DATA
 load("./data/20220629final_vars_aug.RData")
 load("./data/20220629final_vars_aug_imp1.RData")
 load("./data/20220629final_vars_aug_imp2.RData")
@@ -86,7 +85,11 @@ load("./data/20220629final_vars_aug_imp4.RData")
 load("./data/20220629final_vars_aug_imp5.RData")
 
 # set data list including the 5 imputed data files for easier pooling
-ds_list = list(final_vars_aug.imp1, final_vars_aug.imp2, final_vars_aug.imp3, final_vars_aug.imp4, final_vars_aug.imp5)
+ds_list = list(final_vars_aug.imp1, 
+               final_vars_aug.imp2, 
+               final_vars_aug.imp3, 
+               final_vars_aug.imp4, 
+               final_vars_aug.imp5)
 ```
 
 \newpage
@@ -270,7 +273,7 @@ print_figure1_restable("tdi_Sprs", res_area_Sprs_pooled) %>%
 
 ```{r}
 res_table_individual = print_figure1_restable("wealth_Sprs", res_individual_Sprs_pooled) 
-res_table_individual %>% 
+res_table_individual %>%
   kable(format = "latex", align = "l", booktabs = TRUE) %>% 
   kableExtra::row_spec(0, bold = T) %>% 
   kableExtra::kable_styling(position = "center", latex_options = c("HOLD_position")) %>% 
@@ -389,7 +392,8 @@ final_vars_aug.imp1 %>%
   select(inc.dem2, duryears, `Area-Level Socioeconomic Deprivation`) %>% 
   group_by(`Area-Level Socioeconomic Deprivation`) %>% 
   summarise(`No. of Dementia Cases` = sum(inc.dem2 == 1), `Total No.` = n()) %>% 
-  cbind(risk_area, inc_area) %>% 
+  left_join(risk_area, by = c("Area-Level Socioeconomic Deprivation" = "deprivation")) %>% 
+  left_join(inc_area, by = c("Area-Level Socioeconomic Deprivation" = "deprivation")) %>% 
   kable(format = "latex", align = "l", booktabs = TRUE, digits = 2) %>% 
   kableExtra::row_spec(0, bold = T) %>% 
   kableExtra::kable_styling(position = "center", latex_options = c("HOLD_position")) %>% 
@@ -420,7 +424,8 @@ final_vars_aug.imp1 %>%
   select(inc.dem2, duryears, `Individual-Level Socioeconomic Deprivation`) %>% 
   group_by(`Individual-Level Socioeconomic Deprivation`) %>% 
   summarise(`No. of Dementia Cases` = sum(inc.dem2 == 1), `Total No.` = n()) %>% 
-  cbind(risk_individual, inc_individual) %>% 
+  left_join(risk_individual, by = c("Individual-Level Socioeconomic Deprivation" = "deprivation")) %>% 
+  left_join(inc_individual, by = c("Individual-Level Socioeconomic Deprivation" = "deprivation")) %>% 
   kable(format = "latex", align = "l", booktabs = TRUE, digits = 2) %>% 
   kableExtra::row_spec(0, bold = T) %>% 
   kableExtra::kable_styling(position = "center", latex_options = c("HOLD_position")) %>% 
@@ -437,28 +442,28 @@ final_vars_aug.imp1 %>%
 # --------- area absolute risk in % --------- #
 
 ## incidence rates based on first imputed data set 
-inc_area_sprs = inc_est(c("tdi_bin", "Sprs_tert"))
+inc_area_sprs = inc_est("tdi_Sprs")
 
 # --------- area inc rate --------- #
 
 ## risk based on first imputed data set
-risk_area_sprs = risk_est(c("tdi_bin", "Sprs_tert"))
+risk_area_sprs = risk_est("tdi_Sprs")
 
 # --------- print table --------- #
 
 final_vars_aug.imp1 %>%
-  mutate(`Area-Level Socioeconomic Deprivation` = tdi_bin, 
-         `Genetic Risk` = factor(case_when(Sprs_tert == "Q1" ~ "low",
-                                           Sprs_tert == "Q2-4" ~ "intermediate",
-                                           Sprs_tert == "Q5" ~ "high"))) %>% 
-  select(inc.dem2, duryears, `Area-Level Socioeconomic Deprivation`, `Genetic Risk`) %>% 
-  group_by(`Area-Level Socioeconomic Deprivation`, `Genetic Risk`) %>% 
+  mutate(`Area-Level Socioeconomic Deprivation and Genetic Risk` = tdi_Sprs) %>% 
+  select(inc.dem2, duryears, `Area-Level Socioeconomic Deprivation and Genetic Risk`) %>% 
+  group_by(`Area-Level Socioeconomic Deprivation and Genetic Risk`) %>% 
   summarise(`No. of Dementia Cases` = sum(inc.dem2 == 1), `Total No.` = n()) %>% 
-  cbind(risk_area_sprs, inc_area_sprs) %>% 
+  left_join(risk_area_sprs, by = c("Area-Level Socioeconomic Deprivation and Genetic Risk" = "deprivation")) %>% 
+  left_join(inc_area_sprs, by = c("Area-Level Socioeconomic Deprivation and Genetic Risk" = "deprivation")) %>% 
+  mutate(`Area-Level Socioeconomic Deprivation and Genetic Risk` = recode_mixed_deprivation(`Area-Level Socioeconomic Deprivation and Genetic Risk`)) %>% 
   kable(format = "latex", align = "l", booktabs = TRUE, digits = 2) %>% 
   kableExtra::row_spec(0, bold = T) %>% 
   kableExtra::kable_styling(position = "center", latex_options = c("HOLD_position")) %>% 
-  kableExtra::column_spec(c(1, 2), width = "1.8cm") %>% 
+  kableExtra::column_spec(1, width = "2.1cm") %>% 
+  kableExtra::column_spec(2, width = "1.5cm") %>% 
   kableExtra::column_spec(c(3:11), width = "1.26cm")
 ```
 
@@ -470,28 +475,28 @@ final_vars_aug.imp1 %>%
 # --------- individual absolute risk in % --------- #
 
 ## incidence rates based on first imputed data set 
-inc_individual_sprs = inc_est(c("cwwealth_inc", "Sprs_tert"))
+inc_individual_sprs = inc_est(c("wealth_Sprs"))
 
 # --------- individual inc rate --------- #
 
 ## risk based on first imputed data set
-risk_individual_sprs = risk_est(c("cwwealth_inc", "Sprs_tert"))
+risk_individual_sprs = risk_est(c("wealth_Sprs"))
 
 # --------- print table --------- #
 
 final_vars_aug.imp1 %>%
-  mutate(`Individual-Level Socioeconomic Deprivation` = cwwealth_inc, 
-         `Genetic Risk` = factor(case_when(Sprs_tert == "Q1" ~ "low",
-                                           Sprs_tert == "Q2-4" ~ "intermediate",
-                                           Sprs_tert == "Q5" ~ "high"))) %>% 
-  select(inc.dem2, duryears, `Individual-Level Socioeconomic Deprivation`, `Genetic Risk`) %>% 
-  group_by(`Individual-Level Socioeconomic Deprivation`, `Genetic Risk`) %>% 
+  mutate(`Individual-Level Socioeconomic Deprivation and Genetic Risk` = wealth_Sprs) %>% 
+  select(inc.dem2, duryears, `Individual-Level Socioeconomic Deprivation and Genetic Risk`) %>% 
+  group_by(`Individual-Level Socioeconomic Deprivation and Genetic Risk`) %>% 
   summarise(`No. of Dementia Cases` = sum(inc.dem2 == 1), `Total No.` = n()) %>% 
-  cbind(risk_individual_sprs, inc_individual_sprs) %>% 
+  left_join(risk_individual_sprs, by = c("Individual-Level Socioeconomic Deprivation and Genetic Risk" = "deprivation")) %>% 
+  left_join(inc_individual_sprs, by = c("Individual-Level Socioeconomic Deprivation and Genetic Risk" = "deprivation")) %>% 
+  mutate(`Individual-Level Socioeconomic Deprivation and Genetic Risk` = recode_mixed_deprivation(`Individual-Level Socioeconomic Deprivation and Genetic Risk`)) %>% 
   kable(format = "latex", align = "l", booktabs = TRUE, digits = 2) %>% 
   kableExtra::kable_styling(position = "center", latex_options = c("HOLD_position")) %>% 
   kableExtra::row_spec(0, bold = T) %>% 
-  kableExtra::column_spec(c(1, 2), width = "1.8cm") %>% 
+  kableExtra::column_spec(1, width = "2.1cm") %>% 
+  kableExtra::column_spec(2, width = "1.5cm") %>% 
   kableExtra::column_spec(c(3:11), width = "1.26cm")
 ```
 
@@ -899,11 +904,9 @@ print_efigure1(res_area_5, exclude = c("pc", "degree", "sex", "edu", "age", "mar
 #dev.off()
 ```
 
-\newpage
-
 ## eFigure 2. Proportion of Missing Data Prior to Imputation
 
-```{r fig.align="center", fig.width=9, fig.height=9}
+```{r fig.align="center", out.height="70%", out.width="70%"}
 # requires raw data
 knitr::include_graphics("./plots/20230201efigure2.png")
 ```
